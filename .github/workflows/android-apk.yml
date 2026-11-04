@@ -1,0 +1,37 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check project files
+        run: |
+          test -f project.godot
+          test -f scenes/main.tscn
+          test -f scripts/main.gd
+
+      - name: Import project resources
+        run: godot --headless --editor --path . --quit
+
+      - name: Export Android APK
+        run: |
+          mkdir -p build
+          godot --headless --path . --export-debug "Android" build/AURA-SURVIVORS.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: aura-survivors-android
+          path: build/AURA-SURVIVORS.apk
+          if-no-files-found: error
+          retention-days: 14
