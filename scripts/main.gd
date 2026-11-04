@@ -63,7 +63,7 @@ func _process(delta: float) -> void:
 
     for i in range(orbs.size() - 1, -1, -1):
         var orb: Dictionary = orbs[i]
-        var magnet_range := 70.0 + upgrades["Ímã de aura"] * 35.0
+        var magnet_range: float = 70.0 + float(upgrades["Ímã de aura"]) * 35.0
         if player.distance_to(orb["pos"]) < magnet_range:
             orb["pos"] = orb["pos"].move_toward(player, (180.0 + upgrades["Ímã de aura"] * 60.0) * delta)
         if player.distance_to(orb["pos"]) < 23.0:
