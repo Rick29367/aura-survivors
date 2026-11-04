@@ -14,19 +14,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check project files
+      - name: Install Android export templates and configure signing
+        shell: bash
+        run: |
+          set -euxo pipefail
+          godot --headless --editor --install-android-build-template --quit
+          mkdir -p "$HOME/.android"
+          keytool -genkeypair -noprompt \
+            -keystore "$HOME/.android/debug.keystore" \
+            -storepass android -alias androiddebugkey -keypass android \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -keyalg RSA -keysize 2048 -validity 10000
+          JAVA_BIN="$(readlink -f "$(command -v java)")"
+          JAVA_HOME_DIR="$(dirname "$(dirname "$JAVA_BIN")")"
+          mkdir -p "$HOME/.config/godot"
+          cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+          [resource]
+          export/android/android_sdk_path = "/usr/lib/android-sdk"
+          export/android/java_sdk_path = "$JAVA_HOME_DIR"
+          EOF
+
+      - name: Validate project scripts
         run: |
           test -f project.godot
           test -f scenes/main.tscn
           test -f scripts/main.gd
-
-      - name: Import project resources
-        run: godot --headless --editor --path . --quit
+          godot --headless --editor --path . --quit
 
       - name: Export Android APK
         run: |
           mkdir -p build
           godot --headless --path . --export-debug "Android" build/AURA-SURVIVORS.apk
+          test -s build/AURA-SURVIVORS.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
